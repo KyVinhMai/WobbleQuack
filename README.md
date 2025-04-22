@@ -1,6 +1,10 @@
-## 🎯 Overview
+## Overview
 
-High-level description of the technical implementation, architecture decisions, and key components.
+A large lanugage modeling pipeline for the natural langugae processing group which uses UCI's HPC3 Cluster. Use the compute resources regularly, as they are replinished every 6 months based on the amount you've utilized (see reallocation in UCI HPC3)
+
+Updates:
+2025 Spring Quarter - Inference, Finetuning, & Interptability Scripts
+2025 Summer - Pretraining Scripts for 125M - 300M Large Language Models with Distributed Parallelization (Deepspeed)
 
 ## **QuickStart Guide To HPC3 for Language Modeling:**
 
@@ -12,10 +16,7 @@ You should be attached to a lab and given a set of GPU allocated hours
 
 `squeue -u [username]` - Check your submitted jobs
 
-🚨Absolute No’s🚨: 
-
-<aside>
-💡
+## 🚨Absolute No’s🚨: 
 
 Never load modules in your .bashrc or .bash_profilefiles.
 
