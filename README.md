@@ -4,6 +4,7 @@ A large lanugage modeling pipeline for the natural langugae processing group whi
 
 Updates:
 2025 Spring Quarter - Inference, Finetuning, & Interptability Scripts
+
 2025 Summer - Pretraining Scripts for 125M - 300M Large Language Models with Distributed Parallelization (Deepspeed)
 
 ## **QuickStart Guide To HPC3 for Language Modeling:**
