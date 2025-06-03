@@ -1,73 +1,127 @@
-## Overview
+Here's a friendly, improved quickstart guide that emphasizes the key points while maintaining experiment integrity:
 
-A large lanugage modeling pipeline for the natural langugae processing group which uses UCI's HPC3 Cluster. Use the compute resources regularly, as they are replinished every 6 months based on the amount you've utilized (see reallocation in UCI HPC3)
+# **🚀 QuickStart Guide: HPC3 for Language Modeling**
 
-Updates:
-2025 Spring Quarter - Inference, Finetuning, & Interptability Scripts
+## **Overview**
+A comprehensive language modeling pipeline for the Natural Language Processing group using UCI's HPC3 cluster. **Use It Or Lose It** - allocations are replenished every 6 months based on usage patterns (see [reallocation policy](https://hpc3.rcic.uci.edu)).
 
-2025 Summer - Pretraining Scripts for 125M - 300M Large Language Models with Distributed Parallelization (Deepspeed)
+**📅 Pipeline Roadmap:**
+- **Spring 2025**: Inference, Fine-tuning, & Interpretability Scripts  
+- **Summer 2025**: Pretraining Scripts (125M-300M models) with Distributed Parallelization
 
-## **QuickStart Guide To HPC3 for Language Modeling:**
+---
 
-You should be attached to a lab and given a set of GPU allocated hours
+## **🎯 Essential Commands**
+```bash
+ssh [username]@hpc3.rcic.uci.edu          # Connect to cluster
+sbank balance statement -u [username]      # Check GPU hour balance  
+squeue -u [username]                       # Monitor your jobs
+scancel [job_id]                           # Cancel a job if needed
+dfsquotas [username] all                   # Check storage quota for users
+df -h ~                                    # How much storage is used/available in /data/home 
+```
 
-`ssh [username]@hpc3.rcic.edu` - Log onto server
+---
 
-`sbank balance statement -u [username]` -  Check your available balance
+## **🚨 Critical Rules (Avoid Account Suspension!)**
 
-`squeue -u [username]` - Check your submitted jobs
+### **❌ NEVER on Login Nodes:**
+- Computational jobs or GPU work
+- Jobs running >1 hour or using significant CPU/memory
+- Multi-threaded compilation (`make -j 8`)
+- Conda/pip installations 
+- Large file downloads (>few GB)
 
-## 🚨Absolute No’s🚨: 
+### **❌ NEVER with Modules:**
+- Load modules in `.bashrc` or `.bash_profile` 
+- Unload auto-loaded prerequisite modules
+- **Always specify version**: `module load python/3.10.2` ✅ not `module load python` ❌
 
-Never load modules in your .bashrc or .bash_profilefiles.
+---
 
-Never unload modules that were auto-loaded by a module itself
+## **⚡ Quick Setup**
 
-Do not run on login node:
+### **1. First-Time Login**
+```bash
+ssh [your-ucinetid]@hpc3.rcic.uci.edu
+# Use UCI password + DUO authentication
+# Pro tip: Set up SSH keys for easier access
+```
 
-- **any computational jobs**
-- **any job that runs for more than 1hr or is using significant memory and CPU**
-- **any compilation** that asks for multiple threads while running make
-(for example `make -j 8`)
-- **any conda or R installation** of packages or environments
-- **any downloads** of packages, data, large files that exceed a few Gb.
-</aside>
+### **2. Set Up Keys And Storage Space**
+```
+# 1. Create .env file in your project directory
+# /pub/your_ucinetid/your_project/.env
 
-1.  How to log on:
-    1. SSH [your UCI net ID]@`hpc3.rcic.uci.edu`
-    Your password is your UCInetID password.
-    2. Respond to multi-factor authentication prompts
-    3. Use ssh key (highly recommended)
+HF_TOKEN=hf_your_actual_token_here
+WANDB_API_KEY=your_wandb_key_here
+OPENAI_API_KEY=your_openai_key_here
 
-Set Up
+# 2. Load .env in your Python code
+# install python-dotenv: pip install python-dotenv
 
-1. Set up and add Conda to bash files (https://rcic.uci.edu/software/user-installed.html#install-with-conda)
-    1. NOTE: You should not try to install packages directly on the login node! Use an interactive node 
-    
-    ```bash
-    srun -p free --mem=32G --pty /bin/bash -i
-    
-    # Load modules
-    module load python/3.10.2
-    module load cuda/11.7.1
-    
-    # Create conda enviornment
-    conda init bash
-    conda create -n [You Environment Name]
-    
-    # Activate environment
-    conda activate [You Environment Name]
-    
-    # Install PyTorch with matching CUDA version
-    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
-    
-    pip install transformers accelerate bitsandbytes tqdm
-    
-    #Check to see if it is installed
-    python -c "import torch; print('CUDA available:', torch.cuda.is_available()); print('CUDA version:', torch.version.cuda)"
-    ```
-    
+# 3. Alternative: Set environment variables in your Slurm script
+# This is often preferred on HPC systems
+```
 
-## 📋 Additional Resources
+### **3. Environment Setup (On Interactive Node!)**
+```bash
+# Get interactive node for setup
+srun -p free --mem=32G --pty /bin/bash -i
 
-https://royf.org/crs/CS277/W24/HPC3.pdf
+# Load essential modules
+module load python/3.10.2
+module load cuda/11.7.1
+
+# Initialize conda (one-time only)
+conda init bash
+source ~/.bashrc
+
+# Create your environment
+conda create -n llm_experiments python=3.10
+conda activate llm_experiments
+
+# Install core packages (NO quantization for experiment integrity!)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+pip install transformers accelerate datasets tqdm pandas numpy
+pip install huggingface_hub wandb  # For model access & experiment tracking
+
+# Verify installation
+python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU count: {torch.cuda.device_count()}')"
+```
+
+### **4. Quick Test Job**
+```bash
+# Create simple test script
+cat > test_gpu.py << 'EOF'
+import torch
+print(f"PyTorch version: {torch.__version__}")
+print(f"CUDA available: {torch.cuda.is_available()}")
+if torch.cuda.is_available():
+    print(f"GPU device: {torch.cuda.get_device_name(0)}")
+    print(f"GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+EOF
+
+# Submit test job
+sbatch --partition=free-gpu --gres=gpu:V100:1 --time=00:05:00 --wrap="python test_gpu.py"
+```
+
+---
+
+## **💡 Pro Tips**
+- **Check quotas regularly**: `dfsquotas [username] all`
+- **Use /pub/[username] for data**: Never store large files in $HOME
+- **Monitor jobs**: Use `seff [job_id]` to check efficiency after completion
+- **Request appropriate resources**: Don't over-request memory/GPUs you won't use
+
+---
+
+## **📋 Next Steps**
+1. **Read the detailed guides** (coming soon): Job submission (https://www.notion.so/Quick-Guide-SLURM-HPC3-204a2623684480f1bd06fb40931df587?source=copy_link), storage management, debugging
+2. **Ask for help**: Check with lab for HPC3 support sessions
+3. **Bookmark**: [HPC3 Documentation](https://hpc3.rcic.uci.edu) & [Roy's CS277 Guide](https://royf.org/crs/CS277/W24/HPC3.pdf)
+
+---
+**🎓 Remember**: HPC3 is a shared resource. Be considerate of others, follow the rules, and happy computing! 
+
+**Questions?** Ask in lab Slack or submit tickets to `hpc-support@uci.edu`
