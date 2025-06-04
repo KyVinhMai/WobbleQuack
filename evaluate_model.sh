@@ -13,8 +13,8 @@
 module load python/3.10.2
 module load cuda/11.7.1
 
-source ~/.bashrc
-conda activate ambi
+source /pub/kyvinhm/setup_env.sh
+conda activate llm_training
 
 echo "Job ID: $SLURM_JOB_ID"
 echo "Node: $SLURMD_NODENAME"
@@ -22,17 +22,16 @@ echo "GPU: $CUDA_VISIBLE_DEVICES"
 echo "Working directory: $(pwd)"
 echo "Start time: $(date)"
 
-cp input.txt llama7b_simple_inference.py $TMPDIR/
+cp -r evaluation $TMPDIR/
 cd $TMPDIR
 
 python evaluate_model_response.py \
-    --input_file \
-    --models \
-    --max_generatation \
-    --extract_logprobs \
-    --max_tasks \
-    --fast_inference \
-    --output_dir \
+    --stimuli_csv syntatic_stimmuli.csv \
+    --sentence_column sentence \
+    --model_identifiers \
+    --hf_token YOUR_HF_TOKEN_IF_NEEDED \
+    --output_dir llm-pipeline/evaluation/results/logprob_tests \
+    --mode sentence
 
 # Copy results back (only if the output file exists)
 if [ -f output.txt ]; then

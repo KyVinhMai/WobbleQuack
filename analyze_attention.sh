@@ -14,34 +14,45 @@ mkdir -p logs
 module load python/3.10.2
 module load cuda/11.7.1
 
-source ~/.bashrc
-conda activate llm_experiments
+source /pub/kyvinhm/setup_env.sh
+conda activate llm_training
 
-export CUDA_VISIBLE_DEVICES=0
+cp interpretability/analyze_attention.py $TMPDIR/
+cp -r shared/src/models/ $TMPDIR/
+cd $TMPDIR
 
-export TMPDIR_CUSTOM=$TMPDIR/experiment_$SLURM_JOB_ID
-mkdir -p $TMPDIR_CUSTOM
+sync_results() {
+    echo "Syncing results to permanent storage..."
+    if [ -d "results" ]; then
+        # Sync results back to your project area
+        rsync -av --progress results/ /pub/kyvinhm/WobbleQuack/results/
+        sync  # Force filesystem sync
+        
+        echo "✓ Results synced to /pub/kyvinhm/WobbleQuack/results/"
+        
+        # Quick summary
+        echo "Result summary:"
+        find results -name "*.csv" | head -5
+        du -sh results
+    else
+        echo "⚠ Warning: No results directory found"
+    fi
+}
 
-cd $TMPDIR_CUSTOM
+trap sync_results EXIT
 
-# Print job info for debugging
 echo "Job ID: $SLURM_JOB_ID"
 echo "Node: $SLURMD_NODENAME"
 echo "GPU: $CUDA_VISIBLE_DEVICES"
 echo "Working directory: $(pwd)"
 echo "Start time: $(date)"
 
-# Your actual work here
-python your_script.py \
-    --model_name "meta-llama/Llama-2-7b-hf" \
-    --output_dir "/pub/$USER/results/experiment_$SLURM_JOB_ID" \
-    --batch_size 4 \
-    --max_length 2048
-
-# Optional: Copy results from scratch to permanent storage
-if [ -d "$TMPDIR_CUSTOM" ]; then
-    echo "Copying results from scratch..."
-    rsync -av $TMPDIR_CUSTOM/ /pub/$USER/results/job_$SLURM_JOB_ID/
-fi
+python analyze_attention.py \
+    --model_identifier "gpt2" \
+    --input_text "Hello world, this is a test of the attention mechanism." \
+    --layers "0" "5" "11" \
+    --heads "0" "1" \
+    --output_dir "llm-pipeline/interpretability/outputs/gpt2_hello_attention" \
+    --device "cuda"
 
 echo "Job completed at: $(date)"

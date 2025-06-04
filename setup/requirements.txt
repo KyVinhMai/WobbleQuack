@@ -1,0 +1,39 @@
+# This file may be used to create an environment using:
+# $ conda create --name llm_training --file setup/requirements.txt
+# platform: linux-64
+
+# Core ML/NLP packages
+torch>=2.0.0
+transformers>=4.40.0
+datasets>=2.20.0
+tokenizers>=0.20.0
+safetensors>=0.4.0
+
+# Hugging Face ecosystem
+huggingface_hub>=0.20.0
+optimum>=1.20.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+pyarrow>=10.0.0
+
+# Experiment tracking & logging
+wandb>=0.16.0
+tqdm>=4.60.0
+
+# Model evaluation & analysis
+minicons>=0.2.0
+
+# Environment management
+python-dotenv>=1.0.0
+
+# Utilities
+requests>=2.28.0
+pyyaml>=6.0
+psutil>=5.9.0
+
+# Development/debugging (optional)
+jupyter
+matplotlib
+seaborn

@@ -12,17 +12,40 @@
 module load python/3.10.2
 module load cuda/11.7.1
 
-source ~/.bashrc
-conda activate ambi
+source /pub/kyvinhm/setup_env.sh
+conda activate llm_training
 
-export CUDA_VISIBLE_DEVICES=0
-export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+cp interpretability/analyze_attention.py $TMPDIR/
+cp -r shared/src/models/ $TMPDIR/
+cd $TMPDIR
+
+# Function to sync results back to permanent storage
+sync_results() {
+    echo "Syncing results to permanent storage..."
+    if [ -d "results" ]; then
+        # Sync results back to your project area
+        rsync -av --progress results/ /pub/kyvinhm/WobbleQuack/results/
+        sync  # Force filesystem sync
+        
+        echo "✓ Results synced to /pub/kyvinhm/WobbleQuack/results/"
+        
+        # Quick summary
+        echo "Result summary:"
+        find results -name "*.csv" | head -5
+        du -sh results
+    else
+        echo "⚠ Warning: No results directory found"
+    fi
+}
+
+# Set up cleanup trap (runs on normal exit, cancellation, or failure)
+trap sync_results EXIT
 
 python llm-pipeline/training/scripts/python/run_finetuning.py \
     --model_name_or_path "gpt2" \
     --dataset_path "./path/to/your/train.txt" \
     --text_column "text" \
-    --output_dir "./gpt2_lora_finetuned" \
+    --output_dir "$RESULTS_DIR/gpt2_lora_finetuned" \
     --overwrite_output_dir \
     --num_train_epochs 1 \
     --per_device_train_batch_size 4 \
@@ -39,11 +62,4 @@ python llm-pipeline/training/scripts/python/run_finetuning.py \
     --lora_target_modules "c_attn" \
     --report_to "wandb" 
 
-# Copy results back (only if the output file exists)
-if [ -f output.txt ]; then
-    cp output.txt $SLURM_SUBMIT_DIR/output_${SLURM_JOB_ID}.txt
-else
-    echo "Warning: output.txt was not created"
-fi
-
-rm -rf $TMPDIR/huggingface
+echo "Job completed at: $(date)"

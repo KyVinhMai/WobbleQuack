@@ -1,0 +1,9 @@
+id,sentence,phenomenon,grammaticality
+s1,"The cat chased the mouse quickly.",simple_active,grammatical
+s2,"The mouse the cat chased quickly.",simple_object_relative,grammatical
+s3,"The cat quickly mouse the chased.",scrambled_active,ungrammatical
+s4,"The quick brown fox jumps over the lazy dog.",control,grammatical
+s5,"The dog that the cat that the bird saw chased meowed.",double_center_embedding,grammatical
+s6,"Dog lazy the over jumps fox brown quick the.",scrambled_control,ungrammatical
+s7,"The keys to the cabinet are on the table.",plural_agreement_subj_verb,grammatical
+s8,"The keys to the cabinet is on the table.",plural_agreement_subj_verb_error,ungrammatical

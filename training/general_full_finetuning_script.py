@@ -4,7 +4,8 @@ import sys
 from dataclasses import dataclass, field
 from typing import Optional, Union, Dict, List
 from pathlib import Path # Import Path
-
+from dotenv import load_dotenv
+import os
 import torch
 import transformers
 from transformers import (
@@ -23,8 +24,9 @@ from peft import LoraConfig, get_peft_model, TaskType, prepare_model_for_kbit_tr
 
 logger = logging.getLogger(__name__)
 
-# IMPORTANT: Modify "username" and "project" as needed for your environment, or ensure this path is writable and appropriate.
-FIXED_BASE_OUTPUT_DIR = Path("/pub/username/project")
+
+load_dotenv()
+RESULT_OUTPUT_DIR = os.getenv("RESULTS_DIR")
 
 @dataclass
 class ModelArguments:
