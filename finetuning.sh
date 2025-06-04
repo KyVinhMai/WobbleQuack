@@ -6,12 +6,15 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --time=6:00:00
-#SBATCH --output=Finetuning_GPT2_%j.out
-#SBATCH --error=Finetuning_GPT2_%j.err
+#SBATCH --output=logs/Finetuning_GPT2_%j.out
+#SBATCH --error=logs/Finetuning_GPT2_%j.err
+
+mkdir -p logs
 
 module load python/3.10.2
 module load cuda/11.7.1
 
+source ~/.bashrc
 source /pub/kyvinhm/setup_env.sh
 conda activate llm_training
 

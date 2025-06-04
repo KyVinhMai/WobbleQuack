@@ -4,6 +4,8 @@ from minicons import scorer as minicons_scorer
 import logging
 import gc
 import os
+import traceback
+
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -76,8 +78,7 @@ class ModelLoader:
         logger.info(f"Model {unloaded_model_identifier} unloaded successfully.")
 
     def load_model_and_tokenizer(self, model_identifier: str, fast_inference: bool = False, 
-                                 quantization_bits: int = None, device: str = "cuda",
-                                 trust_remote_code: bool = False): # Added trust_remote_code
+                                 quantization_bits: int = None, device: str = "cuda"):
         """
         Load model and tokenizer from a Hugging Face model ID or a local path.
         Args:
@@ -86,10 +87,10 @@ class ModelLoader:
             fast_inference (bool): General flag for optimizations. Influences torch_dtype if no specific quantization.
             quantization_bits (int, optional): Load in specified bits (e.g., 4 or 8). None for no quantization.
             device (str): "cuda", "cpu", or "auto" for device_map.
-            trust_remote_code (bool): Whether to trust remote code for models that require it. Defaults to False.
         Returns:
             tuple: (model, tokenizer)
         """
+         
         if not model_identifier:
             raise ValueError("model_identifier cannot be empty.")
 
@@ -114,11 +115,9 @@ class ModelLoader:
             "token": self.hf_token, # Pass token for HF Hub access; ignored if not needed or local
             "device_map": device if device != "auto" else "auto",
             "low_cpu_mem_usage": True,
-            "trust_remote_code": trust_remote_code,
         }
         tokenizer_kwargs = {
             "token": self.hf_token,
-            "trust_remote_code": trust_remote_code,
         }
 
 
@@ -177,6 +176,7 @@ class ModelLoader:
         except Exception as e:
             self.unload_model()
             logger.error(f"Error loading model/tokenizer from '{model_identifier}': {e}")
+            traceback.print_exc()
             raise
 
         return self.current_model, self.tokenizer

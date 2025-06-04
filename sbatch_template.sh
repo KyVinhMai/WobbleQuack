@@ -20,6 +20,7 @@ module load python/3.10.2
 module load cuda/11.7.1
 
 # Activate your conda environment
+eval "$(conda shell.bash hook)"
 source /pub/yournetid/setup_env.sh
 conda activate llm_training
 

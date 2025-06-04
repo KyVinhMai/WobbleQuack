@@ -40,9 +40,6 @@ def parse_requested_indices(requested_spec: list, total_available: int, item_typ
             logger.warning(f"Invalid {item_type} specifier '{spec_item}'. Expected 'all' or integer. Skipping.")
     
     if not indices:
-        # This case might occur if all specific inputs were invalid, and "all" was not specified.
-        # Depending on desired behavior, could default to all, or error, or return empty.
-        # For now, let's warn and return empty if no valid specific indices were found.
         logger.warning(f"No valid specific {item_type} indices found in '{requested_spec}'. Check your input.")
         return []
         
@@ -73,8 +70,7 @@ def plot_attention_heatmap(attention_matrix, tokens, model_name_display, layer_i
 
     ax.set_title(title_text, fontsize=10)
     
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    
+
     filename_base = f"attention_l{layer_idx}_h{head_idx}"
     filename = Path(output_dir) / f"{filename_base}.png"
     
@@ -109,9 +105,7 @@ def parse_args():
                         help="Enable fast inference optimizations (e.g., specific dtypes).")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu",
                         help="Device for model loading ('cuda', 'cpu', 'auto'). Default: 'cuda' if available, else 'cpu'.")
-    parser.add_argument("--trust_remote_code", action="store_true",
-                        help="Set to True if loading a model that requires trusting remote code.")
-
+    
     # Plotting arguments
     parser.add_argument("--figsize", type=float, nargs=2, default=[10, 8],
                         help="Figure size (width, height) in inches for plots. Default: 10 8.")
@@ -122,31 +116,35 @@ def parse_args():
 def main():
     args = parse_args()
     
-    model_name_display = Path(args.model_identifier).name
+    model_name_display = Path(args.model_identifier).name # Used for plot titles
 
     logger.info(f"Starting attention analysis for model: {args.model_identifier}")
     logger.info(f"Input text: '{args.input_text}'")
-    logger.info(f"Output directory: {args.output_dir}")
+    logger.info(f"Output directory (in scratch): {args.output_dir}") # This will be JOB_SCRATCH_OUTPUT_DIR
 
-    Path(args.output_dir).mkdir(parents=True, exist_ok=True)
 
     model_loader = ModelLoader(hf_token=args.hf_token)
-    model = None
+    model = None # Initialize model variable
 
     try:
+
         model, tokenizer = model_loader.load_model_and_tokenizer(
             args.model_identifier,
             fast_inference=args.fast_inference,
             quantization_bits=args.quantization_bits,
             device=args.device,
-            trust_remote_code=args.trust_remote_code
         )
+        
+        if model is None or tokenizer is None:
+            logger.error(f"Model or Tokenizer loading failed for {args.model_identifier}. Exiting.")
+            return # Exit if model/tokenizer loading failed
+
         model.eval()
 
         # Tokenize input
         inputs = tokenizer(args.input_text, return_tensors="pt", truncation=True)
         input_ids = inputs["input_ids"].to(model.device)
-        tokens = tokenizer.convert_ids_to_tokens(input_ids[0]) # Get token strings for labels
+        tokens = tokenizer.convert_ids_to_tokens(input_ids[0]) 
 
         if not tokens:
             logger.error("Tokenization resulted in no tokens. Cannot proceed.")
@@ -156,7 +154,7 @@ def main():
         with torch.no_grad():
             model_outputs = model(input_ids, output_attentions=True)
         
-        attentions = model_outputs.attentions # Tuple of tensors, one for each layer
+        attentions = model_outputs.attentions 
 
         if attentions is None:
             logger.error("Model did not output attentions. Ensure the model architecture supports it and 'output_attentions=True' is effective.")
@@ -183,16 +181,14 @@ def main():
                 logger.warning(f"Layer index {layer_idx} is out of bounds for attentions tuple. Skipping.")
                 continue
             
-            # attentions[layer_idx] shape: (batch_size, num_heads, seq_len, seq_len)
-            # Squeeze batch_size (assuming it's 1)
-            layer_attention_tensor = attentions[layer_idx].squeeze(0).cpu() # Move to CPU for numpy conversion
+            layer_attention_tensor = attentions[layer_idx].squeeze(0).cpu()
 
             for head_idx in heads_to_analyze_for_each_layer:
-                if head_idx < 0 or head_idx >= layer_attention_tensor.shape[0]: # num_heads is shape[0] after squeeze
+                if head_idx < 0 or head_idx >= layer_attention_tensor.shape[0]: 
                     logger.warning(f"Head index {head_idx} is out of bounds for layer {layer_idx}. Skipping.")
                     continue
 
-                head_attention_matrix = layer_attention_tensor[head_idx].numpy() # (seq_len, seq_len)
+                head_attention_matrix = layer_attention_tensor[head_idx].numpy()
 
                 plot_attention_heatmap(
                     head_attention_matrix, tokens, model_name_display, layer_idx, head_idx,
