@@ -1,4 +1,3 @@
-Here's a friendly, improved quickstart guide that emphasizes the key points while maintaining experiment integrity:
 
 # **🚀 QuickStart Guide: HPC3 for Language Modeling**
 
