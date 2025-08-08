@@ -13,3 +13,15 @@ results/
 
 # Personal utility scripts
 slurm_utils.py
+# Environment files
+.env
+
+# Personal configuration
+setup/setup_cache_dir.sh
+
+# Log and result directories
+logs/
+results/
+
+# Personal utility scripts  
+slurm_utils.py
